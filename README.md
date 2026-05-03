@@ -1,78 +1,214 @@
-# RegistroEstudiantes API
+﻿# Registro Estudiantes API
 
-Resumen de la soluci�n para el proyecto de Registro de Estudiantes.
+API REST desarrollada en **.NET 8** para gestionar autenticación de estudiantes, consulta de materias, registro de materias y visualización de compañeros.
 
-## Descripci�n
+El proyecto está construido aplicando **Arquitectura Hexagonal**, separando la lógica de aplicación de detalles externos como HTTP, MySQL, Dapper, JWT y BCrypt.
 
-Aplicaci�n backend construida con .NET 8 que expone una API para el registro de materias de estudiantes, administraci�n de compa�eros y consulta de materias disponibles. La soluci�n est� organizada por capas (API, Aplicaci�n, Infraestructura y Dominio) siguiendo principios de arquitectura limpia.
+---
 
-## Estructura del repositorio
+## Arquitectura
 
-- RegistroEstudiantes.API/       -> Proyecto Web API (controladores, DTOs, middlewares, configuraciones)
-- RegistroEstudiantes.Aplicacion/-> L�gica de negocio y casos de uso (puertos de entrada)
-- RegistroEstudiante.Dominio/    -> Entidades del dominio
-- RegistroEstudiantes.Infraestructura/ -> Implementaciones de repositorios, adaptadores y servicios (persistencia, seguridad, tokens)
+La solución usa el enfoque de **puertos y adaptadores**:
 
-## Requisitos
+```txt
+Cliente HTTP
+   ↓
+API / Controllers
+   ↓
+Puertos de entrada
+   ↓
+Casos de uso
+   ↓
+Puertos de salida
+   ↓
+Infraestructura
+   ↓
+MySQL
+```
 
-- .NET 8 SDK
-- MySQL (o servidor compatible) con las tablas y procedimientos almacenados necesarios
-- (Opcional) Postman o similar para probar endpoints
+### Capas
 
-## Configuraci�n
+| Proyecto | Responsabilidad |
+|---|---|
+| `RegistroEstudiantes.API` | Adaptador de entrada HTTP. Controllers, Swagger, JWT, CORS y middlewares. |
+| `RegistroEstudiantes.Aplicacion` | Casos de uso y puertos de entrada/salida. |
+| `RegistroEstudiante.Domain` | Entidades del dominio. |
+| `RegistroEstudiantes.Infraestructura` | Adaptadores de salida: Dapper, MySQL, BCrypt y JWT. |
+| `ScriptsBBDD` | Scripts y configuración local de base de datos. |
 
-1. Clonar el repositorio.
-2. Editar el archivo appsettings.json en RegistroEstudiantes.API para configurar la cadena de conexi�n y ajustes de JWT. Valores importantes:
-   - ConnectionStrings:ConexionBaseDeDatos: cadena de conexi�n a la base de datos MySQL.
-   - Secci�n de JWT (revisar el contenido de `appsettings.json` y las extensiones de autenticaci�n para las claves exactas).
+---
 
-3. Verificar que la base de datos contiene las tablas y procedimientos almacenados utilizados por el repositorio. Los procedimientos que usa la aplicaci�n (ejemplos) pueden incluir:
-   - sp_RegistrarMateriasEstudiante
-   - sp_ObtenerMateriasDisponibles
-   - sp_VerEstudiantesPorMateria
-   - sp_ObtenerMateriasRegistradas
+## Tecnologías
 
-Si no dispone de los scripts SQL, consulte la carpeta `ScriptsBBDD/`.
+- .NET 8
+- ASP.NET Core Web API
+- MySQL
+- Dapper
+- JWT Bearer
+- BCrypt
+- Swagger / OpenAPI
+- Docker Compose
 
-## C�mo ejecutar
+---
 
-Desde la ra�z del repositorio:
+## Estructura general
 
-1. Restaurar paquetes:
-   dotnet restore
+```txt
+RegistroEstudiantes_Hex/
+│
+├── RegistroEstudiantes.API/
+├── RegistroEstudiantes.Aplicacion/
+├── RegistroEstudiante.Domain/
+├── RegistroEstudiantes.Infraestructura/
+├── ScriptsBBDD/
+├── RegistroEstudiantesAPI.sln
+└── README.md
+```
 
-2. Construir el proyecto:
-   dotnet build
+---
 
-3. Ejecutar la API (desde el proyecto RegistroEstudiantes.API):
-   dotnet run --project RegistroEstudiantes.API
+## Configuración
 
-La API por defecto se ejecutar� en la URL indicada por la configuraci�n (ej. https://localhost:5001).
+La configuración principal está en:
 
-## Autenticaci�n
+```txt
+RegistroEstudiantes.API/appsettings.json
+```
 
-La API utiliza autenticaci�n JWT. Antes de usar los endpoints protegidos de `EstudiantesController` debe autenticarse (revisar el `AutenticacionController` para endpoints de login/registro). Incluir el token en el header `Authorization: Bearer <token>`.
+Ejemplo:
+
+```json
+{
+  "ConnectionStrings": {
+    "ConexionBaseDeDatos": "server=localhost;port=3307;user=TU_USUARIO;password=TU_PASSWORD;database=registro_estudiantes"
+  },
+  "Jwt": {
+    "ClaveSecreta": "REEMPLAZAR_POR_UNA_CLAVE_SEGURA_DE_AL_MENOS_32_CARACTERES",
+    "ExpiracionHoras": 1
+  },
+  "AllowedHosts": "*"
+}
+```
+
+> Para ambientes reales se recomienda usar variables de entorno, User Secrets o un administrador de secretos.
+
+---
+
+## Base de datos
+
+El proyecto usa **MySQL** y procedimientos almacenados mediante **Dapper**.
+
+Procedimientos principales:
+
+```txt
+sp_RegistrarEstudiante
+sp_LoginEstudiante
+sp_RegistrarMateriasEstudiante
+sp_ObtenerMateriasDisponibles
+sp_VerEstudiantesPorMateria
+sp_ObtenerMateriasRegistradas
+```
+
+Para levantar la base de datos local con Docker:
+
+```bash
+cd ScriptsBBDD
+docker compose up -d
+```
+
+---
+
+## Ejecución local
+
+Desde la raíz del proyecto:
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project RegistroEstudiantes.API
+```
+
+Luego abrir Swagger en la URL mostrada por consola, por ejemplo:
+
+```txt
+https://localhost:5001/swagger
+```
+
+---
+
+## Autenticación
+
+La API utiliza **JWT Bearer Token**.
+
+Flujo básico:
+
+1. Registrar estudiante.
+2. Iniciar sesión.
+3. Copiar el token recibido.
+4. Usar el token en Swagger/Postman con el formato:
+
+```txt
+Bearer {token}
+```
+
+---
 
 ## Endpoints principales
 
-Nota: el prefijo de ruta base es `api/`.
+### Autenticación
 
-- GET api/estudiantes/materias-disponibles
-  - Obtiene las materias disponibles para el estudiante autenticado.
+| Método | Endpoint | Requiere token | Descripción |
+|---|---|---|---|
+| POST | `/api/autenticacion/registro` | No | Registra un estudiante. |
+| POST | `/api/autenticacion/login` | No | Autentica y retorna JWT. |
 
-- POST api/estudiantes/registrar-materias
-  - Registra materias para el estudiante autenticado.
-  - Request body: { "materias": [1, 2, 3] }
+### Estudiantes
 
-- GET api/estudiantes/companeros
-  - Obtiene compa�eros por materias del estudiante autenticado.
+| Método | Endpoint | Requiere token | Descripción |
+|---|---|---|---|
+| GET | `/api/estudiantes/materias-disponibles` | Sí | Consulta materias disponibles. |
+| POST | `/api/estudiantes/registrar-materias` | Sí | Registra materias del estudiante. |
+| GET | `/api/estudiantes/companeros` | Sí | Consulta compañeros por materias. |
+| GET | `/api/estudiantes/materias-inscritas` | Sí | Consulta materias inscritas. |
 
-- GET api/estudiantes/materias-inscritas
-  - Obtiene las materias inscritas por el estudiante autenticado.
+Ejemplo para registrar materias:
 
-- Auth endpoints
-  - Revisar `RegistroEstudiantes.API.Controllers.AutenticacionController` para los endpoints de autenticaci�n (login / registro).
+```json
+{
+  "materias": [1, 2, 3]
+}
+```
 
-## Persistencia
+---
 
-La capa de infraestructura usa Dapper para ejecutar procedimientos almacenados en MySQL. Aseg�rese de que la cadena de conexi�n en `appsettings.json` apunte a una base de datos con los procedimientos esperados.
+## Decisiones técnicas
+
+- Se usa **Arquitectura Hexagonal** para desacoplar la aplicación de frameworks y detalles técnicos.
+- Los **controllers** actúan como adaptadores de entrada.
+- Los **casos de uso** contienen la lógica de aplicación.
+- Los **puertos de salida** definen contratos para persistencia, hashing y generación de tokens.
+- La **infraestructura** implementa esos contratos usando Dapper, MySQL, BCrypt y JWT.
+- Se usa **Dapper** por su simplicidad y eficiencia con procedimientos almacenados.
+- Las contraseñas se almacenan usando **hash BCrypt**, no texto plano.
+
+---
+
+## Seguridad
+
+El proyecto incluye:
+
+- Autenticación JWT.
+- Endpoints protegidos con `[Authorize]`.
+- Hashing de contraseñas con BCrypt.
+- Middleware global para manejo de errores.
+- Configuración externa mediante `appsettings.json`.
+
+Recomendaciones para producción:
+
+- No publicar secretos reales.
+- Usar HTTPS.
+- Restringir CORS.
+- Usar variables de entorno para credenciales.
+- Configurar expiración adecuada del token.
+
+---

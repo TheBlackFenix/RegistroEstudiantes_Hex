@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RegistroEstudiante.Domain\RegistroEstudiante.Dominio.csproj" />
+    <ProjectReference Include="..\RegistroEstudiante.Domain\RegistroEstudiantes.Dominio.csproj" />
   </ItemGroup>
 
 </Project>
